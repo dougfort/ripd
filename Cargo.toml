@@ -1,0 +1,12 @@
+[package]
+name = "ripd"
+version = "0.1.0"
+authors = ["dougfort <doug.fort@gmail.com>"]
+
+[dependencies]
+protobuf = "2.0.2"
+grpc = "0.5.0"
+tls-api = "0.1.19"
+
+[build-dependencies]
+protoc-rust-grpc = "0.5.0"
