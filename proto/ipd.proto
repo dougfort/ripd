@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package ipd;
+
+// Iterated Prisoners Dilemma.
+service IPD {
+
+    // NewGame requests a new game
+    rpc NewGame(NewGameRequest) returns (NewGameResponse) {}
+
+	// PlayGame streams a single game in both directions
+	rpc PlayGame(stream ActionRequest) returns (stream ActionResult) {}
+
+}
+
+message NewGameRequest {
+    string playerName = 1;
+}
+
+message NewGameResponse {
+    string gameID = 1;
+    string opponentName = 2;
+}
+
+message ActionRequest {
+    string gameID = 1;
+    uint64 sequence = 2;
+    enum Action {
+        NULL = 0;
+        COOPERATE = 1;
+        DEFECT = 2;
+    }
+    Action action = 3;
+}
+
+message ActionResult {
+	string gameID = 1;
+    uint64 sequence = 2;
+    uint32 score = 3;
+}
