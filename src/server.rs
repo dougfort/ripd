@@ -1,8 +1,8 @@
-use tonic::{transport::Server, Request, Response, Status, Streaming};
-use tokio::sync::mpsc;
 use ipd::ipd_server::{Ipd, IpdServer};
-use ipd::{Action, NewGameRequest, NewGameResponse, ActionRequest, ActionResult};
-mod ipd; 
+use ipd::{Action, ActionRequest, ActionResult, NewGameRequest, NewGameResponse};
+use tokio::sync::mpsc;
+use tonic::{transport::Server, Request, Response, Status, Streaming};
+mod ipd;
 
 #[derive(Default)]
 pub struct IpdData {}
@@ -10,11 +10,13 @@ pub struct IpdData {}
 // implementing rpc for service defined in .proto
 #[tonic::async_trait]
 impl Ipd for IpdData {
-
     type PlayGameStream = mpsc::Receiver<Result<ActionResult, Status>>;
 
-    async fn new_game(&self,_request:Request<NewGameRequest>)->Result<Response<NewGameResponse>,Status>{
-        Ok(Response::new(NewGameResponse{
+    async fn new_game(
+        &self,
+        _request: Request<NewGameRequest>,
+    ) -> Result<Response<NewGameResponse>, Status> {
+        Ok(Response::new(NewGameResponse {
             game_id: "foot".to_string(),
             opponent_name: "clam".to_string(),
         }))
@@ -27,7 +29,7 @@ impl Ipd for IpdData {
         let mut streamer = request.into_inner();
         let (mut tx, rx) = mpsc::channel(4);
         tokio::spawn(async move {
-            while let Some(req) = streamer.message().await.unwrap(){
+            while let Some(req) = streamer.message().await.unwrap() {
                 tx.send(Ok(ActionResult {
                     game_id: req.game_id,
                     sequence: req.sequence,
