@@ -1,20 +1,17 @@
 use tonic::{transport::Server, Request, Response, Status, Streaming};
-use std::pin::Pin;
-use futures::Stream;
+use tokio::sync::mpsc;
 use ipd::ipd_server::{Ipd, IpdServer};
-use ipd::{NewGameRequest, NewGameResponse, ActionRequest, ActionResult};
+use ipd::{Action, NewGameRequest, NewGameResponse, ActionRequest, ActionResult};
 mod ipd; 
 
 #[derive(Default)]
 pub struct IpdData {}
 
-type ResponseStream = Pin<Box<dyn Stream<Item = Result<ActionResult, Status>> + Send + Sync>>;
-
 // implementing rpc for service defined in .proto
 #[tonic::async_trait]
 impl Ipd for IpdData {
 
-    type PlayGameStream = ResponseStream;
+    type PlayGameStream = mpsc::Receiver<Result<ActionResult, Status>>;
 
     async fn new_game(&self,_request:Request<NewGameRequest>)->Result<Response<NewGameResponse>,Status>{
         Ok(Response::new(NewGameResponse{
@@ -25,11 +22,23 @@ impl Ipd for IpdData {
 
     async fn play_game(
         &self,
-        _request: Request<Streaming<ActionRequest>>,
-    ) -> Result<Response<ResponseStream>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        request: Request<Streaming<ActionRequest>>,
+    ) -> Result<Response<Self::PlayGameStream>, Status> {
+        let mut streamer = request.into_inner();
+        let (mut tx, rx) = mpsc::channel(4);
+        tokio::spawn(async move {
+            while let Some(req) = streamer.message().await.unwrap(){
+                tx.send(Ok(ActionResult {
+                    game_id: req.game_id,
+                    sequence: req.sequence,
+                    opponent_action: Action::Cooperate as i32,
+                    score: 1,
+                }))
+                .await;
+            }
+        });
+        Ok(Response::new(rx))
     }
-
 }
 
 #[tokio::main]
