@@ -5,10 +5,13 @@ package ipd;
 // Iterated Prisoners Dilemma.
 service IPD {
 
-    // NewGame requests a new game
+    /// NewGame requests a new game
     rpc NewGame(NewGameRequest) returns (NewGameResponse) {}
 
-	// PlayGame streams a single game in both directions
+	/// Play makes a single move in an existing game
+	rpc Play(ActionRequest) returns (ActionResult) {}
+
+	/// PlayGame streams a single game in both directions
 	rpc PlayGame(stream ActionRequest) returns (stream ActionResult) {}
 
 }

@@ -1,11 +1,20 @@
+#[macro_use]
+extern crate log;
+
 use ipd::ipd_server::{Ipd, IpdServer};
-use ipd::{Action, ActionRequest, ActionResult, NewGameRequest, NewGameResponse};
+use ipd::{ActionRequest, ActionResult, NewGameRequest, NewGameResponse};
 use tokio::sync::mpsc;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 mod ipd;
 
 #[derive(Default)]
 pub struct IpdData {}
+
+impl IpdData {
+    fn new() -> Self {
+        IpdData {}
+    }
+}
 
 // implementing rpc for service defined in .proto
 #[tonic::async_trait]
@@ -14,40 +23,38 @@ impl Ipd for IpdData {
 
     async fn new_game(
         &self,
-        _request: Request<NewGameRequest>,
+        request: Request<NewGameRequest>,
     ) -> Result<Response<NewGameResponse>, Status> {
+        info!("new_game: {}", request.get_ref().player_name);
         Ok(Response::new(NewGameResponse {
             game_id: "foot".to_string(),
             opponent_name: "clam".to_string(),
         }))
     }
 
+    async fn play(
+        &self,
+        request: Request<ActionRequest>,
+    ) -> Result<Response<ActionResult>, Status> {
+        debug!("play: {:?}", request);
+        Err(Status::unimplemented("play"))
+    }
+
     async fn play_game(
         &self,
         request: Request<Streaming<ActionRequest>>,
     ) -> Result<Response<Self::PlayGameStream>, Status> {
-        let mut streamer = request.into_inner();
-        let (mut tx, rx) = mpsc::channel(4);
-        tokio::spawn(async move {
-            while let Some(req) = streamer.message().await.unwrap() {
-                tx.send(Ok(ActionResult {
-                    game_id: req.game_id,
-                    sequence: req.sequence,
-                    opponent_action: Action::Cooperate as i32,
-                    score: 1,
-                }))
-                .await;
-            }
-        });
-        Ok(Response::new(rx))
+        debug!("stream_game: {:?}", request);
+        Err(Status::unimplemented("play"))
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
     let addr = "[::1]:50051".parse().unwrap();
-    let ipd = IpdData::default();
-    println!("Server listening on {}", addr);
+    let ipd = IpdData::new();
+    info!("Server listening on {}", addr);
     Server::builder()
         .add_service(IpdServer::new(ipd))
         .serve(addr)
