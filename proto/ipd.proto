@@ -27,19 +27,19 @@ message NewGameRequest {
 }
 
 message NewGameResponse {
-    string gameID = 1;
+    uint32 gameID = 1;
     string opponentName = 2;
 }
 
 message ActionRequest {
-    string gameID = 1;
+    uint32 gameID = 1;
     uint64 sequence = 2;
     Action action = 3;
 }
 
 message ActionResult {
-	string gameID = 1;
+	uint32 gameID = 1;
     uint64 sequence = 2;
-    Action opponentAction = 3;
+    Action action = 3;
     uint32 score = 4;
 }
