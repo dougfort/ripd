@@ -41,5 +41,5 @@ message ActionResult {
 	uint32 gameID = 1;
     uint64 sequence = 2;
     Action action = 3;
-    uint32 score = 4;
+    uint32 payoff = 4;
 }

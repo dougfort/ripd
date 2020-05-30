@@ -3,18 +3,19 @@ extern crate log;
 
 use ipd::ipd_server::{Ipd, IpdServer};
 use ipd::{ActionRequest, ActionResult, NewGameRequest, NewGameResponse};
+use payoff::compute_payoff;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use tokio::sync::mpsc;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 mod ipd;
+mod payoff;
 
 #[derive(Default)]
 pub struct GameData {
     sequence: u64,
-    players: (String, String),
-    history: Vec<(i32, i32)>,
+    history: Vec<(ipd::Action, ipd::Action)>,
 }
 
 #[derive(Default)]
@@ -51,7 +52,6 @@ impl Ipd for IpdData {
 
         let game_data = GameData {
             sequence: 1,
-            players: ("Calculon".to_string(), request.player_name),
             history: Vec::new(),
         };
         {
@@ -70,24 +70,25 @@ impl Ipd for IpdData {
     ) -> Result<Response<ActionResult>, Status> {
         let request = request.into_inner();
         let game_id = request.game_id;
-        let opponent_action = request.action;
+        let opponent_action = ipd::Action::from(request.action);
         let mut game_map = self.game_map.lock().unwrap();
         let game_data = match game_map.get_mut(&game_id) {
             Some(gd) => gd,
             None => return Err(Status::unavailable(format!("no such game: {}", game_id))),
         };
         game_data.sequence += 1;
-        let our_action = 1;
+        let our_action = ipd::Action::Defect;
+        let (our_payoff, opponent_payoff) = compute_payoff(our_action, opponent_action);
         info!(
-            "play: game_id: {}; sequence: {}; action: ({:?}, {:?})",
-            game_id, game_data.sequence, opponent_action, our_action
+            "play: game_id: {}; sequence: {}; action: ({}, {}), payoff ({}, {})",
+            game_id, game_data.sequence, our_action, opponent_action, our_payoff, opponent_payoff
         );
         game_data.history.push((opponent_action, our_action));
         Ok(Response::new(ActionResult {
             game_id,
             sequence: game_data.sequence,
-            action: our_action,
-            score: 0,
+            action: i32::from(our_action),
+            payoff: opponent_payoff,
         }))
     }
 

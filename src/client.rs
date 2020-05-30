@@ -2,7 +2,7 @@
 extern crate log;
 
 use ipd::ipd_client::IpdClient;
-use ipd::{ActionRequest, NewGameRequest};
+use ipd::{Action, ActionRequest, NewGameRequest};
 
 mod ipd;
 
@@ -34,8 +34,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let action_result = client.play(action_request).await?.into_inner();
     info!(
-        "game: {}, sequence: {}, action: {}, score: {}",
-        action_result.game_id, action_result.sequence, action_result.action, action_result.score
+        "game: {}, sequence: {}, action: {}, payoff: {}",
+        action_result.game_id, action_result.sequence, Action::from(action_result.action), action_result.payoff
     );
 
     Ok(())
