@@ -27,16 +27,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "game is = {}; opponenent = {}",
         game_response.game_id, game_response.opponent_name
     );
-    let action_request = tonic::Request::new(ActionRequest {
-        game_id: game_response.game_id,
-        sequence: 1,
-        action: 1,
-    });
-    let action_result = client.play(action_request).await?.into_inner();
-    info!(
-        "game: {}, sequence: {}, action: {}, payoff: {}",
-        action_result.game_id, action_result.sequence, Action::from(action_result.action), action_result.payoff
-    );
+
+    let mut n: i32 = 0;
+    loop {
+        let action_request = tonic::Request::new(ActionRequest {
+            game_id: game_response.game_id,
+            action: 1,
+        });
+        let action_result = client.play(action_request).await?.into_inner();
+        info!(
+            "game: {}, action: {}, payoff: {}",
+            action_result.game_id,
+            Action::from(action_result.action),
+            action_result.payoff
+        );
+        n += 1;
+        if n == 10 {
+            break;
+        }
+    }
 
     Ok(())
 }
