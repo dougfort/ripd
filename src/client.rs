@@ -28,6 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         game_response.game_id, game_response.opponent_name
     );
 
+    let mut score: u32 = 0;
     let mut n: i32 = 0;
     loop {
         let action_request = tonic::Request::new(ActionRequest {
@@ -35,11 +36,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             action: 1,
         });
         let action_result = client.play(action_request).await?.into_inner();
+        score += action_result.payoff;
         info!(
-            "game: {}, action: {}, payoff: {}",
+            "game: {}, action: {}, payoff: {}, score: {}",
             action_result.game_id,
             Action::from(action_result.action),
-            action_result.payoff
+            action_result.payoff,
+            score,
         );
         n += 1;
         if n == 10 {

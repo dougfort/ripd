@@ -14,6 +14,7 @@ mod payoff;
 
 #[derive(Default)]
 pub struct GameData {
+    score: u32,
     history: Vec<(ipd::Action, ipd::Action)>,
 }
 
@@ -50,6 +51,7 @@ impl Ipd for IpdData {
         );
 
         let game_data = GameData {
+            score: 0,
             history: Vec::new(),
         };
         {
@@ -76,9 +78,10 @@ impl Ipd for IpdData {
         };
         let our_action = ipd::Action::Defect;
         let (our_payoff, opponent_payoff) = compute_payoff(our_action, opponent_action);
+        game_data.score += our_payoff;
         info!(
-            "play: game_id: {}; action: ({}, {}), payoff ({}, {})",
-            game_id, our_action, opponent_action, our_payoff, opponent_payoff
+            "play: game_id: {}; action: ({}, {}), payoff ({}, {}), score: {}",
+            game_id, our_action, opponent_action, our_payoff, opponent_payoff, game_data.score,
         );
         game_data.history.push((opponent_action, our_action));
         Ok(Response::new(ActionResult {
