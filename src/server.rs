@@ -7,7 +7,7 @@ use payoff::compute_payoff;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
-use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 mod ipd;
 mod payoff;
@@ -36,7 +36,7 @@ impl IpdData {
 // implementing rpc for service defined in .proto
 #[tonic::async_trait]
 impl Ipd for IpdData {
-    type PlayGameStream = mpsc::Receiver<Result<ActionResult, Status>>;
+    type PlayGameStream = ReceiverStream<Result<ActionResult, Status>>;
 
     async fn new_game(
         &self,
